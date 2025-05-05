@@ -7,33 +7,33 @@ import com.hypherionmc.craterlib.core.rpcsdk.helpers.RPCButton;
 public class DiscordPresenceHandler {
 
     private static boolean initialized = false;
-    private static final String APP_ID = "1270577318175441017";
+    private static DiscordConfig config;
 
     @SuppressWarnings("removal")
     public static void init() {
         if (initialized) return;
 
-        DiscordRPC.INSTANCE.Discord_Initialize(APP_ID, null, true, null);
+        config = DiscordConfig.load();
+        DiscordRPC.INSTANCE.Discord_Initialize(config.appId, null, true, null);
         updatePresence();
         initialized = true;
     }
 
     @SuppressWarnings("removal")
     public static void updatePresence() {
+        if (config == null) return;
+
         DiscordRichPresence presence = new DiscordRichPresence();
-
-        // 🏗️ Añadir espacio entre detalles y estado usando \n
-        presence.details = "👾Servidor de Tanizen🐲";
-        presence.state = "🌌𝗛𝗢𝗦𝗧𝗘𝗔𝗗𝗢 𝗘𝗡 𝗛𝗢𝗟𝗬𝗛𝗢𝗦𝗧𝗜𝗡𝗚🌌";
+        presence.details = config.details;
+        presence.state = config.state;
         presence.startTimestamp = System.currentTimeMillis() / 1000L;
-        presence.largeImageKey = "log";
-        presence.largeImageText = "🌟Sevidor de Subs🌟";
-        presence.smallImageKey = "icon";
-        presence.smallImageText = "🚀TNTStudios🚀";
+        presence.largeImageKey = config.largeImageKey;
+        presence.largeImageText = config.largeImageText;
+        presence.smallImageKey = config.smallImageKey;
+        presence.smallImageText = config.smallImageText;
 
-        // 🔥 Crear y asignar los botones correctamente
-        RPCButton button1 = RPCButton.create("🔥 HolyHosting 🔥", "https://www.holy.gg/");
-        RPCButton button2 = RPCButton.create("⚡ TNTStudios ⚡", "https://x.com/TNTStudiosN/");
+        RPCButton button1 = RPCButton.create(config.button1Label, config.button1Url);
+        RPCButton button2 = RPCButton.create(config.button2Label, config.button2Url);
 
         presence.button_label_1 = button1.getLabel();
         presence.button_url_1 = button1.getUrl();
