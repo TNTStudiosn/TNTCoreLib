@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "tntcorelib",
+  "version": "${version}",
+  "name": "TNTCoreLib",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/tntcorelib/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.TNTStudios.tntcorelib.client.TntcorelibClient"
+    ],
+    "main": [
+      "com.TNTStudios.tntcorelib.Tntcorelib"
+    ]
+  },
+  "mixins": [
+    "tntcorelib.mixins.json",
+    {
+      "config": "tntcorelib.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
