@@ -26,4 +26,9 @@ public class TitleScreenMixin {
         );
     }
 
+    @Inject(method = "removed", at = @At("HEAD"))
+    private void onRemoved(CallbackInfo ci) {
+        MenuScreenVideo.stop();
+    }
+
 }

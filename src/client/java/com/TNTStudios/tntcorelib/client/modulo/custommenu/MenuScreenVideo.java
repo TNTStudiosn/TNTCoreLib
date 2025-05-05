@@ -31,11 +31,18 @@ public final class MenuScreenVideo {
             URI uri = file.toURI();
             player = new VideoPlayer(new MediaPlayerFactory(), MinecraftClient.getInstance());
             player.start(uri);
+
+            // 🔁 Activar modo repetición (loop)
+            if (player.raw() != null) {
+                player.raw().mediaPlayer().controls().setRepeat(true);
+            }
+
             return true;
         } catch (Exception e) {
             return false;
         }
     }
+
 
     public static void render(DrawContext ctx, int screenW, int screenH) {
         if (player == null) return;
@@ -80,4 +87,15 @@ public final class MenuScreenVideo {
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
     }
+
+    public static void stop() {
+        if (player != null) {
+            player.stop();
+            player.release(); // 🔥 Libera todos los recursos del VLC internamente
+            player = null;
+            lastTexId = 0;
+        }
+    }
+
+
 }

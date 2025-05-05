@@ -16,6 +16,8 @@ import java.util.function.Consumer;
 @Mixin(SplashOverlay.class)
 public abstract class SplashOverlayMixin {
 
+    private boolean videoWasActive = false;
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(MinecraftClient client,
                         ResourceReload reload,
@@ -23,6 +25,7 @@ public abstract class SplashOverlayMixin {
                         boolean reloading,
                         CallbackInfo ci) {
         LoadScreen.tryInitVideo();
+        videoWasActive = true;
     }
 
     @Inject(method = "render", at = @At("TAIL"))
@@ -34,6 +37,12 @@ public abstract class SplashOverlayMixin {
         );
     }
 
-
+    @Inject(method = "render", at = @At("TAIL"))
+    private void checkOverlayClosed(DrawContext ctx, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        if (videoWasActive && MinecraftClient.getInstance().getOverlay() == null) {
+            LoadScreen.stopVideo();
+            videoWasActive = false;
+        }
+    }
 }
 

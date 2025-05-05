@@ -83,4 +83,13 @@ public final class LoadScreen {
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
     }
+
+    public static void stopVideo() {
+        if (player != null) {
+            player.stop();
+            player = null;
+            lastTexId = 0;
+        }
+    }
+
 }
