@@ -27,7 +27,7 @@ public abstract class SplashOverlayMixin {
                         Consumer<Optional<Throwable>> exceptionHandler,
                         boolean reloading,
                         CallbackInfo ci) {
-        // Nada aquí, se inicializa en render
+        // Se inicializa en el render para garantizar que todo esté listo
     }
 
     @Inject(method = "render", at = @At("HEAD"))
@@ -48,9 +48,7 @@ public abstract class SplashOverlayMixin {
                 MinecraftClient.getInstance().getWindow().getScaledHeight()
         );
 
-        if (LoadScreen.isFinished()) {
-            MinecraftClient.getInstance().setOverlay(null);
-        }
+        // No cerramos aquí: lo hacemos en el redirect cuando isFinished() devuelva true
     }
 
     @Redirect(
@@ -61,8 +59,11 @@ public abstract class SplashOverlayMixin {
             )
     )
     private void redirectSetOverlay(MinecraftClient client, Overlay overlay) {
+        // Solo permitimos el cambio cuando el video y fade han terminado
         if (LoadScreen.isFinished()) {
-            client.setOverlay(overlay);
+            client.setOverlay(overlay); // usamos el overlay original de Mojang
         }
+        // si no, no hacemos nada (bloqueamos el cambio)
     }
+
 }
