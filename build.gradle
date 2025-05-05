@@ -36,6 +36,9 @@ dependencies {
 
     //CraterLib - usado por el modulo de discord
     modImplementation "curse.maven:craterlib-867099:6347211"
+
+    //WATERMeDIA - usado por el modulo CustomMenu
+    modImplementation "curse.maven:watermedia-869524:6457358"
 }
 
 processResources {
