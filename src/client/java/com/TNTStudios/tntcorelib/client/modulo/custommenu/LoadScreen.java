@@ -66,7 +66,7 @@ public final class LoadScreen {
         splashDone = true;
     }
 
-    /** Actualiza estado interno y controla fade y cierre. */
+    /** Actualiza estado interno y controla fade. */
     private static void updateState() {
         if (!videoEnded && player != null && player.isEnded()) {
             videoEnded = true;
@@ -75,26 +75,24 @@ public final class LoadScreen {
             fading = true;
             fadeStartTime = System.currentTimeMillis();
         }
-        if (fading && (System.currentTimeMillis() - fadeStartTime) >= FADE_MS) {
-            stop();
-            MinecraftClient.getInstance().setOverlay(null);
-        }
     }
 
     /**
-     * Renderiza el video cubriendo toda la pantalla (modo cover),
-     * con fade-out y frame dropping para rendimiento.
+     * Renderiza el video en modo cover (llenar pantalla) con fade y FPS limitados.
      */
     public static void render(DrawContext ctx, int screenW, int screenH) {
         if (player == null) return;
         long now = System.currentTimeMillis();
 
-        // Avanza frame limitando FPS
+        // Solo avanzar frame si no terminó y tiempo suficiente ha pasado
         if (!videoEnded && now - lastFrameTime >= FRAME_INTERVAL) {
             int id = player.preRender();
-            if (id > 0) lastTexId = id;
+            if (id > 0) {
+                lastTexId = id;
+            }
             lastFrameTime = now;
         }
+
         int texId = lastTexId;
         if (texId <= 0) return;
 
@@ -106,8 +104,8 @@ public final class LoadScreen {
         float scrAspect = (float) screenW / screenH;
         int w, h;
         if (vidAspect > scrAspect) {
-            h = screenH;
             w = Math.round(screenH * vidAspect);
+            h = screenH;
         } else {
             w = screenW;
             h = Math.round(screenW / vidAspect);
@@ -115,20 +113,20 @@ public final class LoadScreen {
         int x = (screenW - w) / 2;
         int y = (screenH - h) / 2;
 
-        // Calcular alpha para fade
+        // Calcular alpha para fade-out
         float alpha = 1f;
         if (fading) {
             alpha = 1f - Math.min((now - fadeStartTime) / (float) FADE_MS, 1f);
         }
 
-        // Preparar render
+        // Configurar OpenGL a través de RenderSystem
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.setShaderTexture(0, texId);
         RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
-        // Dibujar quad con matrix stack (cover)
+        // Dibujar quad con matrix stack
         Matrix4f mat = ctx.getMatrices().peek().getPositionMatrix();
         BufferBuilder buf = Tessellator.getInstance().getBuffer();
         buf.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
@@ -138,15 +136,15 @@ public final class LoadScreen {
         buf.vertex(mat, x,     y,     0f).texture(0f, 0f).next();
         Tessellator.getInstance().draw();
 
+        // Restaurar estado
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
 
-        // Actualizar estado (fade & cierre)
         updateState();
     }
 
-    /** Detiene y libera video. */
+    /** Detiene y libera recursos del video. */
     public static void stop() {
         if (player != null) {
             player.stop();
@@ -158,9 +156,11 @@ public final class LoadScreen {
         fading = false;
     }
 
-    /** True si ya terminó y debe cerrarse overlay. */
+    /**
+     * True si el fade ha completado y ya podemos cerrar el overlay.
+     */
     public static boolean isFinished() {
-        return player == null && !initialized;
+        return fading && (System.currentTimeMillis() - fadeStartTime) >= FADE_MS;
     }
 
     private LoadScreen() {}
