@@ -17,11 +17,12 @@ public class LoadScreen {
     private static VideoPlayer player;
     private static boolean initialized = false;
 
-    // --- Flags para controlar el fade tras el cierre del splash ---
+    // Estado interno
     private static boolean splashEnded = false;
+    private static boolean videoEnded = false;
     private static boolean fading = false;
     private static long fadeStartMs = 0;
-    private static final long FADE_DURATION_MS = 2000; // 1 s de fade
+    private static final long FADE_DURATION_MS = 2000;
 
     public static boolean tryInitVideo() {
         if (initialized) return player != null;
@@ -47,40 +48,35 @@ public class LoadScreen {
         return player != null;
     }
 
-    /** Llamar desde el mixin cuando el splash de Mojang se cierre */
     public static void requestFade() {
         if (!splashEnded) {
             splashEnded = true;
-            System.out.println("[TNTCoreLib] Splash terminado: pendiente fade-out.");
+            System.out.println("[TNTCoreLib] Splash terminó.");
         }
     }
 
-    /** Gestiona cuándo arrancar el fade y cuándo detener realmente el vídeo */
     private static void tickFade() {
-        if (player == null || !splashEnded) return;
+        if (player == null) return;
 
-        // Si aún no hemos empezado el fade...
-        if (!fading) {
-            // Solo iniciamos fade cuando el vídeo ya haya terminado
-            if (!player.isEnded()) {
-                return; // esperamos a fin del vídeo
-            }
+        if (!videoEnded && player.isEnded()) {
+            videoEnded = true;
+            System.out.println("[TNTCoreLib] Video terminó naturalmente.");
+        }
+
+        if (!fading && splashEnded && videoEnded) {
             fading = true;
             fadeStartMs = System.currentTimeMillis();
+            System.out.println("[TNTCoreLib] Iniciando fade-out.");
         }
 
-        // Si ya estamos en fade, comprobamos duración
-        long elapsed = System.currentTimeMillis() - fadeStartMs;
-        if (elapsed >= FADE_DURATION_MS) {
-            stop();
-            player = null;
-            // reseteamos banderas para posible recarga
-            splashEnded = false;
-            fading = false;
+        if (fading) {
+            long elapsed = System.currentTimeMillis() - fadeStartMs;
+            if (elapsed >= FADE_DURATION_MS) {
+                stop();
+            }
         }
     }
 
-    /** Dibuja el vídeo, con alpha si estamos en fade */
     public static void render(DrawContext context, int screenW, int screenH) {
         if (player == null) return;
 
@@ -88,7 +84,6 @@ public class LoadScreen {
         Dimension dim = player.dimension();
         if (dim == null) return;
 
-        // calculamos escalado manteniendo aspect ratio
         float aspect = (float) dim.width / dim.height;
         int w = screenW;
         int h = (int) (w / aspect);
@@ -99,21 +94,18 @@ public class LoadScreen {
         int x = (screenW - w) / 2;
         int y = (screenH - h) / 2;
 
-        // calculamos alpha en función de si ya estamos en fade
         float alpha = 1f;
         if (fading) {
             long elapsed = System.currentTimeMillis() - fadeStartMs;
             alpha = 1f - Math.min(elapsed / (float) FADE_DURATION_MS, 1f);
         }
 
-        // configuramos GL/shader
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.setShaderTexture(0, texId);
         RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
-        // dibujamos el quad centrado
         Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
@@ -123,19 +115,22 @@ public class LoadScreen {
         builder.vertex(matrix, x,     y,     0f).texture(0f, 0f).next();
         Tessellator.getInstance().draw();
 
-        // restauramos GL
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
 
-        // avanzamos el fade si procede
         tickFade();
     }
 
     public static void stop() {
         if (player != null) {
-            System.out.println("[TNTCoreLib] Deteniendo video de carga...");
+            System.out.println("[TNTCoreLib] Deteniendo video de carga.");
             player.stop();
+            player = null;
         }
+
+        splashEnded = false;
+        videoEnded = false;
+        fading = false;
     }
 }

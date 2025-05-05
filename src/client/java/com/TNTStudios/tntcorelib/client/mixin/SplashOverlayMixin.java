@@ -13,12 +13,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SplashOverlay.class)
 public abstract class SplashOverlayMixin {
 
-    @Shadow private float progress;          // shadow del progreso interno
+    @Shadow private float progress;
 
     private boolean loadedCustomVideo = false;
     private boolean splashEndedRequested = false;
 
-    // 1) Inicia el vídeo la primera vez que renderiza el SplashOverlay
     @Inject(method = "render", at = @At("HEAD"))
     private void initVideo(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!loadedCustomVideo) {
@@ -26,18 +25,15 @@ public abstract class SplashOverlayMixin {
         }
     }
 
-    // 2) Tras que Mojang pinte TODO el splash, detectamos si progress>=1 y renderizamos nuestro vídeo
     @Inject(method = "render", at = @At("RETURN"))
     private void renderAndDetectEnd(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!loadedCustomVideo) return;
 
-        // cuando Mojang acaba (progress llega a 1), pedimos el fade solo una vez
         if (!splashEndedRequested && progress >= 1.0f) {
             splashEndedRequested = true;
             LoadScreen.requestFade();
         }
 
-        // encima de todo pintamos el vídeo (o el último fotograma si ya terminó)
         LoadScreen.render(
                 context,
                 MinecraftClient.getInstance().getWindow().getScaledWidth(),
