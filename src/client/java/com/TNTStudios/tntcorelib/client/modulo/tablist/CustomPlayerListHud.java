@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Mi clase para renderizar el nuevo y elegante Tablist.
  * Ha sido rediseñada para ser más atractiva, con paginación automática y un modo de prueba.
+ * AHORA la paginación está sincronizada con los ticks del cliente para un rendimiento estable.
  */
 public class CustomPlayerListHud {
 
@@ -34,14 +35,11 @@ public class CustomPlayerListHud {
     private static final int PLAYERS_PER_ROW = 5;
     private static final int ROWS_PER_PAGE = 6;
     private static final int PLAYERS_PER_PAGE = PLAYERS_PER_ROW * ROWS_PER_PAGE;
-
     private static final int CELL_WIDTH = 110;
     private static final int CELL_HEIGHT = 30;
     private static final int CELL_PADDING_X = 8;
     private static final int CELL_PADDING_Y = 8;
     private static final int HEAD_SIZE = 24;
-
-    // Constantes para el layout general.
     private static final int HEADER_HEIGHT = 22;
     private static final int FOOTER_HEIGHT = 20;
     private static final int BORDER_PADDING = 8;
@@ -52,11 +50,15 @@ public class CustomPlayerListHud {
             .thenComparing(entry -> entry.getScoreboardTeam() != null ? entry.getScoreboardTeam().getName() : "")
             .thenComparing(entry -> entry.getProfile().getName(), String::compareToIgnoreCase);
 
-    // Variables para la paginación automática.
+    // --- MI NUEVA LÓGICA DE TIEMPO BASADA EN TICKS ---
+    // He reemplazado el sistema de tiempo basado en milisegundos por uno de ticks
+    // para asegurar que la paginación esté perfectamente sincronizada con el juego.
+    private static final int PAGE_SWITCH_DELAY_TICKS = 100; // 5 segundos ($20 \text{ ticks/segundo} \times 5 \text{ segundos}$)
+    private static int ticksSinceLastSwitch = 0;
+
+    // Variables para la paginación.
     private static int currentPage = 0;
     private static int totalPages = 0;
-    private static long lastPageChangeTime = 0L;
-    private static final long PAGE_SWITCH_DELAY_MS = 5000; // 5 segundos por página.
 
     // Variables para el testeo de jugadores.
     private static boolean isTesting = false;
@@ -75,7 +77,6 @@ public class CustomPlayerListHud {
         }
         isTesting = true;
         for (int i = 0; i < count; i++) {
-            // Creo perfiles con nombres variados para probar el escalado de texto.
             String name = "TestPlayer" + (i + 1);
             if (i % 10 == 0) name += "_ConNombreLargo";
             if (i % 25 == 0) name = "UnNombreSuperExtremadamenteLargoParaTestear";
@@ -84,27 +85,64 @@ public class CustomPlayerListHud {
     }
 
     /**
-     * El corazón del renderizador. Este método se llama desde mi Mixin.
-     * Ahora decide si renderizar la lista real o la de prueba.
+     * Nuevo método que se debe registrar en el evento de tick del cliente.
+     * Se encarga de actualizar la página de forma sincronizada con el juego.
+     * Lo registraré en mi clase ClientInitializer.
+     */
+    public static void tick() {
+        // Solo proceso la lógica si hay más de una página.
+        if (totalPages > 1) {
+            ticksSinceLastSwitch++;
+            if (ticksSinceLastSwitch >= PAGE_SWITCH_DELAY_TICKS) {
+                currentPage = (currentPage + 1) % totalPages; // Avanzo a la siguiente página.
+                ticksSinceLastSwitch = 0; // Reseteo el contador.
+            }
+        } else {
+            // Si no hay paginación, me aseguro de que el contador esté reseteado.
+            ticksSinceLastSwitch = 0;
+        }
+    }
+
+    /**
+     * El corazón del renderizador. Ahora solo se encarga de dibujar el estado actual.
+     * La lógica de paginación se actualiza en el método tick().
      */
     public static void render(DrawContext context, int scaledWindowWidth, Scoreboard scoreboard, ScoreboardObjective objective) {
+        // Primero actualizo el estado de la paginación con la información más reciente
         if (isTesting) {
+            updatePagingState(fakeProfiles.size());
             renderFromProfiles(context, scaledWindowWidth, fakeProfiles);
         } else {
             List<PlayerListEntry> allPlayers = client.player.networkHandler.getListedPlayerListEntries().stream()
                     .sorted(ENTRY_ORDERING)
                     .collect(Collectors.toList());
+            updatePagingState(allPlayers.size());
             renderFromEntries(context, scaledWindowWidth, allPlayers);
         }
     }
 
     /**
-     * Lógica de renderizado para la lista de jugadores reales (PlayerListEntry).
+     * Actualiza el estado de la paginación (número total de páginas y página actual).
+     * Ya no se encarga de la lógica de tiempo, solo de los cálculos.
+     * @param totalItems El número total de jugadores en la lista.
      */
+    private static void updatePagingState(int totalItems) {
+        if (totalItems <= 0) {
+            totalPages = 0;
+        } else {
+            totalPages = (totalItems + PLAYERS_PER_PAGE - 1) / PLAYERS_PER_PAGE;
+        }
+
+        if (totalPages <= 1) {
+            currentPage = 0; // Si solo hay una página (o ninguna), siempre es la primera.
+        }
+
+        // Me aseguro de que la página actual no se quede fuera de rango si la lista de jugadores cambia.
+        currentPage = MathHelper.clamp(currentPage, 0, Math.max(0, totalPages - 1));
+    }
+
     private static void renderFromEntries(DrawContext context, int scaledWindowWidth, List<PlayerListEntry> allPlayers) {
         if (allPlayers.isEmpty()) return;
-
-        updatePaging(allPlayers.size());
 
         int startIndex = currentPage * PLAYERS_PER_PAGE;
         int endIndex = Math.min(startIndex + PLAYERS_PER_PAGE, allPlayers.size());
@@ -126,13 +164,8 @@ public class CustomPlayerListHud {
         drawFooter(context, layout, allPlayers.size());
     }
 
-    /**
-     * Lógica de renderizado para la lista de prueba (GameProfile).
-     */
     private static void renderFromProfiles(DrawContext context, int scaledWindowWidth, List<GameProfile> allProfiles) {
         if (allProfiles.isEmpty()) return;
-
-        updatePaging(allProfiles.size());
 
         int startIndex = currentPage * PLAYERS_PER_PAGE;
         int endIndex = Math.min(startIndex + PLAYERS_PER_PAGE, allProfiles.size());
@@ -154,26 +187,6 @@ public class CustomPlayerListHud {
         drawFooter(context, layout, allProfiles.size());
     }
 
-    /**
-     * Actualiza la página actual basado en el tiempo transcurrido.
-     * @param totalItems El número total de jugadores en la lista.
-     */
-    private static void updatePaging(int totalItems) {
-        totalPages = (totalItems + PLAYERS_PER_PAGE - 1) / PLAYERS_PER_PAGE;
-        if (totalPages > 1) {
-            long currentTime = System.currentTimeMillis();
-            if (lastPageChangeTime == 0L) lastPageChangeTime = currentTime; // Inicializo el timer.
-            if (currentTime - lastPageChangeTime > PAGE_SWITCH_DELAY_MS) {
-                currentPage = (currentPage + 1) % totalPages; // Avanzo a la siguiente página.
-                lastPageChangeTime = currentTime; // Reseteo el timer.
-            }
-        } else {
-            currentPage = 0;
-            lastPageChangeTime = 0L; // Reseteo si solo hay una página.
-        }
-        currentPage = MathHelper.clamp(currentPage, 0, Math.max(0, totalPages - 1));
-    }
-
     private record LayoutInfo(int totalWidth, int totalHeight, int startX, int startY, int gridStartX, int gridStartY) {}
 
     private static LayoutInfo calculateLayout(int scaledWindowWidth, int playersOnPage) {
@@ -190,7 +203,8 @@ public class CustomPlayerListHud {
         int totalHeight = headerSpace + gridHeight + footerSpace;
 
         int startX = (scaledWindowWidth - totalWidth) / 2;
-        int startY = 20;
+        // AQUÍ he modificado la posición Y para bajar todo el cuadro.
+        int startY = 35;
         int gridStartX = startX + BORDER_PADDING + (totalWidth - BORDER_PADDING * 2 - gridWidth) / 2;
         int gridStartY = startY + headerSpace;
 
@@ -201,16 +215,17 @@ public class CustomPlayerListHud {
         context.fill(layout.startX, layout.startY, layout.startX + layout.totalWidth, layout.startY + layout.totalHeight, 0xCC000000); // Fondo oscuro semi-transparente.
         context.drawBorder(layout.startX, layout.startY, layout.totalWidth, layout.totalHeight, 0xFFFFFFFF); // Borde blanco.
 
-        Text title = Text.literal("JUGADORES CONECTADOS").formatted(Formatting.BOLD, Formatting.WHITE);
+        Text title = Text.literal("㙿").formatted(Formatting.WHITE);
         int titleWidth = client.textRenderer.getWidth(title);
-        context.drawTextWithShadow(client.textRenderer, title, layout.startX + (layout.totalWidth - titleWidth) / 2, layout.startY + 7, -1);
+        // AQUÍ he ajustado la Y del título para compensar el desplazamiento del cuadro.
+        // Originalmente era layout.startY + 7. Como bajé el layout 20px, ahora resto esos 20px.
+        // La nueva posición es layout.startY - 13, que resulta en la misma coordenada visual de antes.
+        context.drawTextWithShadow(client.textRenderer, title, layout.startX + (layout.totalWidth - titleWidth) / 2, layout.startY - 13, -1);
     }
 
     private static void drawFooter(DrawContext context, LayoutInfo layout, int totalPlayerCount) {
         int footerY = layout.startY + layout.totalHeight - FOOTER_HEIGHT + 6;
 
-        // CORRECCIÓN: El método getMaxPlayers() no existe en ClientPlayNetworkHandler.
-        // He eliminado la parte que muestra el máximo de jugadores para evitar el error.
         String playerCountText = isTesting ? "Jugadores (Test): " + totalPlayerCount
                 : "Jugadores: " + totalPlayerCount;
         context.drawTextWithShadow(client.textRenderer, playerCountText, layout.startX + BORDER_PADDING, footerY, -1);
@@ -230,8 +245,6 @@ public class CustomPlayerListHud {
     }
 
     private static void renderDefaultHead(DrawContext context, int x, int y) {
-        // CORRECCIÓN: Usamos el Identifier directo de la skin de Steve.
-        // Esta es la forma más compatible y evita problemas entre versiones.
         Identifier defaultSkin = new Identifier("textures/entity/player/wide/steve.png");
         PlayerSkinDrawer.draw(context, defaultSkin, x, y, HEAD_SIZE, true, false);
     }
@@ -244,10 +257,6 @@ public class CustomPlayerListHud {
         renderNameText(context, Text.literal(profile.getName()), x, y, maxWidth);
     }
 
-    /**
-     * Renderiza el texto del nombre. Si es muy ancho, lo escala para que quepa.
-     * Así me aseguro de que el nombre completo siempre sea visible.
-     */
     private static void renderNameText(DrawContext context, Text displayName, int x, int y, int maxWidth) {
         float scale = 1.0f;
         int nameWidth = client.textRenderer.getWidth(displayName);
