@@ -1,5 +1,6 @@
 package com.TNTStudios.tntcorelib.client;
 
+import com.TNTStudios.tntcorelib.client.modulo.antitrampas.AntiTrampasHandler;
 import com.TNTStudios.tntcorelib.client.modulo.custommenu.CustomMenuHandler;
 import com.TNTStudios.tntcorelib.client.modulo.discord.DiscordPresenceHandler;
 import com.TNTStudios.tntcorelib.client.modulo.tablist.CustomPlayerListHud;
@@ -25,5 +26,8 @@ public class TntcorelibClient implements ClientModInitializer {
                 CustomPlayerListHud.tick();
             }
         });
+
+        // 🛡️ Iniciar módulo Anti-Trampas
+        AntiTrampasHandler.init();
     }
 }
