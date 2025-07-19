@@ -6,12 +6,12 @@ import java.nio.file.Path;
 
 public class CustomMenuHandler {
 
-    // Uso el directorio de config de Fabric para que todo esté donde debe
     private static final Path CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve("TNTCore/Menu/");
 
-    // Defino las rutas de los videos aquí para tener un único punto de referencia
     public static final File LOAD_VIDEO_FILE = CONFIG_DIR.resolve("carga.mp4").toFile();
     public static final File MENU_VIDEO_FILE = CONFIG_DIR.resolve("menu.mp4").toFile();
+
+    public static MenuConfig menuConfig;
 
     public static void init() {
         File videoFolder = CONFIG_DIR.toFile();
@@ -21,5 +21,7 @@ public class CustomMenuHandler {
                 System.out.println("[TNTCoreLib] Carpeta de menú creada en: " + videoFolder.getAbsolutePath());
             }
         }
+
+        menuConfig = MenuConfig.load();
     }
 }

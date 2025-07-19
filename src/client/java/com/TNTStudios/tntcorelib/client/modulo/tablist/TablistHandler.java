@@ -8,6 +8,6 @@ public class TablistHandler {
 
     public static void init() {
         // Registro mi comando de cliente para poder testear el tablist.
-        TablistTestCommand.register();
+        // TablistTestCommand.register();
     }
 }
