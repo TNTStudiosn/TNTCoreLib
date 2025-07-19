@@ -220,7 +220,7 @@ public class CustomPlayerListHud {
         // AQUÍ he ajustado la Y del título para compensar el desplazamiento del cuadro.
         // Originalmente era layout.startY + 7. Como bajé el layout 20px, ahora resto esos 20px.
         // La nueva posición es layout.startY - 13, que resulta en la misma coordenada visual de antes.
-        context.drawTextWithShadow(client.textRenderer, title, layout.startX + (layout.totalWidth - titleWidth) / 2, layout.startY - 13, -1);
+        context.drawTextWithShadow(client.textRenderer, title, layout.startX + (layout.totalWidth - titleWidth) / 2, layout.startY - 7, -1);
     }
 
     private static void drawFooter(DrawContext context, LayoutInfo layout, int totalPlayerCount) {
