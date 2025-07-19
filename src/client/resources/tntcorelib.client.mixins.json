@@ -5,7 +5,9 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "SplashOverlayMixin",
-    "TitleScreenMixin"
+    "TitleScreenMixin",
+    "PlayerListHudMixin",
+    "MouseMixin"
   ],
   "injectors": {
     "defaultRequire": 1
