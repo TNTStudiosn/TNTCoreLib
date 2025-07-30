@@ -19,7 +19,7 @@ public class MenuConfig {
 
     // Defino las variables de configuración con valores por defecto.
     public String serverIp = "mc.servidorejemplo.com";
-    public int layoutVersion = 1; // Un número del 1 al 5.
+    public int layoutVersion = 1; // Un número del 1 al 10.
     public String entrarButtonText = "Entrar"; // ✅ NUEVO: Texto personalizable para el botón de entrar.
 
     // La ruta al archivo de configuración.
