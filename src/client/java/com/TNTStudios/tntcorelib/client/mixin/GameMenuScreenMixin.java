@@ -8,6 +8,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.GameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.TitleScreen; // Importación necesaria.
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.GridWidget;
@@ -29,7 +30,8 @@ public abstract class GameMenuScreenMixin extends Screen {
     @Shadow @Final private boolean showMenu;
     @Shadow @Nullable private ButtonWidget exitButton;
 
-    @Shadow protected abstract void disconnect();
+    // Ya no necesito la referencia al método disconnect() original.
+    // @Shadow protected abstract void disconnect();
 
     // Mis campos para almacenar las dimensiones y posición del logo ya escaladas.
     // Esto evita recalcular en cada frame en el método render().
@@ -73,8 +75,6 @@ public abstract class GameMenuScreenMixin extends Screen {
 
         // --- Configuración de los botones ---
         final int BASE_BUTTON_WIDTH = 204;
-        // - He eliminado el cálculo del ancho escalado, ahora usaré el valor base directamente.
-        // final int scaledButtonWidth = (int) (BASE_BUTTON_WIDTH * scale); // LÍNEA ELIMINADA
 
         GridWidget gridWidget = new GridWidget();
         gridWidget.getMainPositioner().margin(4, 4, 4, 0);
@@ -86,7 +86,6 @@ public abstract class GameMenuScreenMixin extends Screen {
                 ? Text.translatable("menu.returnToMenu")
                 : Text.literal(config.disconnectButtonText);
 
-        // + Ahora uso BASE_BUTTON_WIDTH para un tamaño fijo.
         adder.add(ButtonWidget.builder(returnToGameText, button -> {
             this.client.setScreen(null);
             this.client.mouse.lockCursor();
@@ -98,7 +97,17 @@ public abstract class GameMenuScreenMixin extends Screen {
 
         this.exitButton = adder.add(ButtonWidget.builder(disconnectText, button -> {
             button.active = false;
-            this.client.getAbuseReportContext().tryShowDraftScreen(this.client, this, this::disconnect, true);
+            // Mi lógica de desconexión personalizada que siempre lleva al menú principal.
+            this.client.getAbuseReportContext().tryShowDraftScreen(this.client, this, () -> {
+                // Primero, desconecto la sesión del mundo actual.
+                if (this.client.world != null) {
+                    this.client.world.disconnect();
+                }
+                // Luego, le digo al cliente que limpie su estado y el servidor integrado (si existe).
+                this.client.disconnect();
+                // Finalmente, fuerzo la navegación a la pantalla de título principal.
+                this.client.setScreen(new TitleScreen());
+            }, true);
         }).width(BASE_BUTTON_WIDTH).build());
 
 
@@ -125,7 +134,7 @@ public abstract class GameMenuScreenMixin extends Screen {
         ci.cancel();
 
         // Dibujo el fondo oscuro por defecto.
-        this.renderBackground(context); // Uso el método que incluye delta
+        this.renderBackground(context); // Corregido para usar el método correcto
 
         Identifier logoTextureId = PauseLogoManager.getLogoTextureId();
 
