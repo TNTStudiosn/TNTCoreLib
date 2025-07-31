@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Minecraft Server" type="Application" factoryName="Application">
-    <option name="ALTERNATIVE_JRE_PATH" value="C:/Program Files/Java/jdk-17" />
+    <option name="ALTERNATIVE_JRE_PATH" value="17 pc" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <classpathModifications>
       <entry exclude="true" path="C:\Users\TNTSt\.gradle\caches\modules-2\files-2.1\org.lwjgl\lwjgl-jemalloc\3.3.2\877e17e39ebcd58a9c956dc3b5b777813de0873a\lwjgl-jemalloc-3.3.2.jar" />

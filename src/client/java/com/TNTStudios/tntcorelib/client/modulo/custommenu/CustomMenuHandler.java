@@ -1,3 +1,4 @@
+// Ubicación: src/client/java/com/TNTStudios/tntcorelib/client/modulo/custommenu/CustomMenuHandler.java
 package com.TNTStudios.tntcorelib.client.modulo.custommenu;
 
 import net.fabricmc.loader.api.FabricLoader;
@@ -12,6 +13,7 @@ public class CustomMenuHandler {
     public static final File MENU_VIDEO_FILE = CONFIG_DIR.resolve("menu.mp4").toFile();
 
     public static MenuConfig menuConfig;
+    public static OptionsConfig optionsConfig; // ✅ NUEVO: Referencia a la config de opciones.
 
     public static void init() {
         File videoFolder = CONFIG_DIR.toFile();
@@ -23,5 +25,6 @@ public class CustomMenuHandler {
         }
 
         menuConfig = MenuConfig.load();
+        optionsConfig = OptionsConfig.load(); // ✅ NUEVO: Cargo la configuración de opciones.
     }
 }

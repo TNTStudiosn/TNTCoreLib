@@ -6,7 +6,8 @@
   "client": [
     "SplashOverlayMixin",
     "TitleScreenMixin",
-    "PlayerListHudMixin"
+    "PlayerListHudMixin",
+    "OptionsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
