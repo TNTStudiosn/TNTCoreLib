@@ -31,13 +31,20 @@ public abstract class GameMenuScreenMixin extends Screen {
 
     @Shadow protected abstract void disconnect();
 
+    // Mis campos para almacenar las dimensiones y posición del logo ya escaladas.
+    // Esto evita recalcular en cada frame en el método render().
+    private int scaledLogoWidth;
+    private int scaledLogoHeight;
+    private int scaledLogoY;
+
     protected GameMenuScreenMixin(Text title) {
         super(title);
     }
 
     /**
      * Reemplazo el método init() para construir mi propio menú de pausa.
-     * Uso un GridWidget para alinear los 3 botones verticalmente.
+     * La nueva lógica utiliza posiciones fijas definidas en el config, que se escalan
+     * de manera uniforme según el tamaño de la ventana para un diseño consistente.
      */
     @Inject(method = "init", at = @At("HEAD"), cancellable = true)
     private void onInit(CallbackInfo ci) {
@@ -47,9 +54,27 @@ public abstract class GameMenuScreenMixin extends Screen {
         if (!this.showMenu) {
             return;
         }
+        // Cancelo el método original para construir mi propio menú.
+        ci.cancel();
 
         PauseMenuConfig config = CustomMenuHandler.pauseMenuConfig;
-        final int BUTTON_WIDTH = 204;
+
+        // AJUSTE CLAVE: Lógica de escalado fijo.
+        // Diseño todo para una altura de referencia (ej: 480p) y luego lo escalo
+        // al tamaño actual de la ventana. Esto mantiene las proporciones y posiciones
+        // sin importar la resolución, como si fuera una GUI a escala 3 fija.
+        final float REFERENCE_HEIGHT = 480.0f;
+        float scale = this.height / REFERENCE_HEIGHT;
+
+        // --- Cálculo del logo escalado ---
+        this.scaledLogoWidth = (int) (config.logoRenderWidth * scale);
+        this.scaledLogoHeight = (int) (config.logoRenderHeight * scale);
+        this.scaledLogoY = (int) (config.logoYPosition * scale);
+
+        // --- Configuración de los botones ---
+        final int BASE_BUTTON_WIDTH = 204;
+        // - He eliminado el cálculo del ancho escalado, ahora usaré el valor base directamente.
+        // final int scaledButtonWidth = (int) (BASE_BUTTON_WIDTH * scale); // LÍNEA ELIMINADA
 
         GridWidget gridWidget = new GridWidget();
         gridWidget.getMainPositioner().margin(4, 4, 4, 0);
@@ -61,68 +86,71 @@ public abstract class GameMenuScreenMixin extends Screen {
                 ? Text.translatable("menu.returnToMenu")
                 : Text.literal(config.disconnectButtonText);
 
+        // + Ahora uso BASE_BUTTON_WIDTH para un tamaño fijo.
         adder.add(ButtonWidget.builder(returnToGameText, button -> {
             this.client.setScreen(null);
             this.client.mouse.lockCursor();
-        }).width(BUTTON_WIDTH).build());
+        }).width(BASE_BUTTON_WIDTH).build());
 
         adder.add(ButtonWidget.builder(optionsText, button -> {
             this.client.setScreen(new OptionsScreen(this, this.client.options));
-        }).width(BUTTON_WIDTH).build());
+        }).width(BASE_BUTTON_WIDTH).build());
 
         this.exitButton = adder.add(ButtonWidget.builder(disconnectText, button -> {
             button.active = false;
             this.client.getAbuseReportContext().tryShowDraftScreen(this.client, this, this::disconnect, true);
-        }).width(BUTTON_WIDTH).build());
+        }).width(BASE_BUTTON_WIDTH).build());
 
+
+        // Es crucial llamar a refreshPositions() para que el widget calcule su altura final escalada.
         gridWidget.refreshPositions();
-        // El ancla vertical 0.65F lo sitúa en la parte inferior de la pantalla, debajo del logo.
-        SimplePositioningWidget.setPos(gridWidget, 0, 0, this.width, this.height, 0.5F, 0.65F);
-        gridWidget.forEachChild(this::addDrawableChild);
 
-        ci.cancel();
+        // --- Posicionamiento fijo y escalado de los botones ---
+        // Uso la posición Y de los botones del config y la escalo.
+        int gridY = (int) (config.buttonsYPosition * scale);
+        SimplePositioningWidget.setPos(gridWidget, 0, gridY, this.width, gridWidget.getHeight(), 0.5f, 0.0f);
+        gridWidget.forEachChild(this::addDrawableChild);
     }
 
     /**
-     * Sobrescribo el método render para dibujar mi logo personalizado.
+     * Sobrescribo el método render para dibujar mi logo personalizado con las dimensiones escaladas
+     * y luego dejo que la clase Screen dibuje los botones ya posicionados.
      */
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if (this.showMenu) {
-            this.renderBackground(context);
+        if (!this.showMenu) {
+            super.render(context, mouseX, mouseY, delta);
+            return;
+        }
+        ci.cancel();
 
-            Identifier logoTextureId = PauseLogoManager.getLogoTextureId();
-            PauseMenuConfig config = CustomMenuHandler.pauseMenuConfig;
+        // Dibujo el fondo oscuro por defecto.
+        this.renderBackground(context); // Uso el método que incluye delta
 
-            if (logoTextureId != null) {
-                RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-                RenderSystem.enableBlend();
+        Identifier logoTextureId = PauseLogoManager.getLogoTextureId();
 
-                int logoWidth = config.logoRenderWidth;
-                int logoHeight = config.logoRenderHeight;
-                int logoX = (this.width - logoWidth) / 2;
+        if (logoTextureId != null) {
+            RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.enableBlend();
 
-                // Calculo la posición Y para centrar el logo en el cuarto superior de la pantalla.
-                // Esto lo hace dinámico y responsivo al tamaño de la ventana.
-                int logoY = this.height / 4 - logoHeight / 2;
+            int logoX = (this.width - this.scaledLogoWidth) / 2;
 
-                context.drawTexture(logoTextureId, logoX, logoY, 0, 0, logoWidth, logoHeight, logoWidth, logoHeight);
+            // Dibujo el logo usando las dimensiones y posición Y calculadas y escaladas en init().
+            context.drawTexture(logoTextureId, logoX, this.scaledLogoY, 0, 0, this.scaledLogoWidth, this.scaledLogoHeight, this.scaledLogoWidth, this.scaledLogoHeight);
 
-                RenderSystem.disableBlend();
-            } else {
-                // Si el logo no se carga, muestro el título original para que no quede vacío.
-                context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 40, 0xFFFFFF);
-            }
+            RenderSystem.disableBlend();
+        } else {
+            // Fallback si no hay logo, centrado con una posición Y fija.
+            context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 70, 0xFFFFFF);
         }
 
-        // Llamo al render de la superclase (Screen) para que dibuje los widgets (botones).
+        // Llamo al render de la superclase para que dibuje los widgets (botones).
         super.render(context, mouseX, mouseY, delta);
 
-        if (this.showMenu && this.client != null && this.client.getAbuseReportContext().hasDraft() && this.exitButton != null) {
+        // Dibujo el indicador de reportes pendientes si es necesario.
+        if (this.client != null && this.client.getAbuseReportContext().hasDraft() && this.exitButton != null) {
             context.drawTexture(ButtonWidget.WIDGETS_TEXTURE, this.exitButton.getX() + this.exitButton.getWidth() - 17, this.exitButton.getY() + 3, 182, 24, 15, 15);
         }
-
-        ci.cancel();
     }
 }

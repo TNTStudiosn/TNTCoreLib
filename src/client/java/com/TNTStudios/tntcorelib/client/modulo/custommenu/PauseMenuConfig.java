@@ -22,8 +22,20 @@ public class PauseMenuConfig {
     public String optionsButtonText = "Opciones";
     public String disconnectButtonText = "Desconectar";
     public String logoFileName = "pausa_logo.png";
-    public int logoRenderWidth = 128;
-    public int logoRenderHeight = 128;
+    public int logoRenderWidth = 250;
+    public int logoRenderHeight = 250;
+
+    // AÑADIDO: Nuevos controles para la posición vertical.
+    // Estos valores están pensados para una resolución de referencia y se escalarán con la ventana.
+    /**
+     * Posición vertical (coordenada Y) del logo. Un valor más bajo lo sube.
+     */
+    public int logoYPosition = 0;
+    /**
+     * Posición vertical (coordenada Y) del primer botón. Un valor más bajo lo sube.
+     */
+    public int buttonsYPosition = 230;
+
 
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("TNTCore/Menu/pause_menu_config.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -52,7 +64,13 @@ public class PauseMenuConfig {
 
         try (FileReader reader = new FileReader(configFile)) {
             PauseMenuConfig config = GSON.fromJson(reader, PauseMenuConfig.class);
-            return config == null ? new PauseMenuConfig() : config;
+            // Me aseguro de que el config no sea nulo al cargarlo
+            if (config == null) {
+                PauseMenuConfig defaultConfig = new PauseMenuConfig();
+                defaultConfig.save();
+                return defaultConfig;
+            }
+            return config;
         } catch (IOException e) {
             System.err.println("[TNTCoreLib] No pude leer la configuración del menú de pausa, usando valores por defecto: " + e.getMessage());
             return new PauseMenuConfig();
