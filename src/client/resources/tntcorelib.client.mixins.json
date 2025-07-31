@@ -8,7 +8,8 @@
     "TitleScreenMixin",
     "PlayerListHudMixin",
     "OptionsScreenMixin",
-    "GameMenuScreenMixin"
+    "GameMenuScreenMixin",
+    "DebugHudMixin"
   ],
   "injectors": {
     "defaultRequire": 1
