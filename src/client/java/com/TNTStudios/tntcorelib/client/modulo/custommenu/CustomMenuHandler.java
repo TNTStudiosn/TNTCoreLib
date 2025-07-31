@@ -11,20 +11,29 @@ public class CustomMenuHandler {
 
     public static final File LOAD_VIDEO_FILE = CONFIG_DIR.resolve("carga.mp4").toFile();
     public static final File MENU_VIDEO_FILE = CONFIG_DIR.resolve("menu.mp4").toFile();
+    // ✅ NUEVO: Ruta al archivo del logo del menú de pausa.
+    public static File PAUSE_LOGO_FILE;
 
     public static MenuConfig menuConfig;
-    public static OptionsConfig optionsConfig; // ✅ NUEVO: Referencia a la config de opciones.
+    public static OptionsConfig optionsConfig;
+    // ✅ NUEVO: Referencia a la configuración del menú de pausa.
+    public static PauseMenuConfig pauseMenuConfig;
 
     public static void init() {
-        File videoFolder = CONFIG_DIR.toFile();
-        if (!videoFolder.exists()) {
-            boolean created = videoFolder.mkdirs();
+        File configFolder = CONFIG_DIR.toFile();
+        if (!configFolder.exists()) {
+            boolean created = configFolder.mkdirs();
             if (created) {
-                System.out.println("[TNTCoreLib] Carpeta de menú creada en: " + videoFolder.getAbsolutePath());
+                System.out.println("[TNTCoreLib] Carpeta de menú creada en: " + configFolder.getAbsolutePath());
             }
         }
 
         menuConfig = MenuConfig.load();
-        optionsConfig = OptionsConfig.load(); // ✅ NUEVO: Cargo la configuración de opciones.
+        optionsConfig = OptionsConfig.load();
+        // ✅ NUEVO: Cargo la configuración del menú de pausa.
+        pauseMenuConfig = PauseMenuConfig.load();
+
+        // ✅ NUEVO: Defino la ruta completa al archivo del logo.
+        PAUSE_LOGO_FILE = CONFIG_DIR.resolve(pauseMenuConfig.logoFileName).toFile();
     }
 }
