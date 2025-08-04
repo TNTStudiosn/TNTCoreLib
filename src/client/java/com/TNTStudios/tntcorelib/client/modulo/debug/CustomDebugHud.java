@@ -112,9 +112,9 @@ public class CustomDebugHud {
 
         list.add(Formatting.AQUA + "" + Formatting.BOLD + "Detalles");
         list.add("  " + brandText); // Muestro el texto configurable.
-        list.add(String.format(Locale.ROOT, "  XYZ: %.2f, %.2f, %.2f", client.player.getX(), client.player.getY(), client.player.getZ()));
+        // list.add(String.format(Locale.ROOT, "  XYZ: %.2f, %.2f, %.2f", client.player.getX(), client.player.getY(), client.player.getZ()));
         BlockPos pos = client.player.getBlockPos();
-        list.add(String.format(Locale.ROOT, "  Bloque: %d, %d, %d", pos.getX(), pos.getY(), pos.getZ()));
+        list.add(String.format(Locale.ROOT, "  XYZ: %d, %d, %d", pos.getX(), pos.getY(), pos.getZ()));
         list.add("");
         list.add(Formatting.AQUA + "" + Formatting.BOLD + "Servidor");
 
