@@ -59,10 +59,8 @@ public class Tntcorelib implements ModInitializer {
         });
     }
 
-    // ✅ NUEVO: Getter para mi TimerApi, con una implementación "dummy" por si falla la carga.
     public static TimerApi getTimerApi() {
         if (timerApiInstance == null) {
-            // Devuelvo una implementación que no hace nada para evitar NullPointerExceptions.
             return new TimerApi() {
                 @Override public void start() {}
                 @Override public void pause() {}
@@ -73,6 +71,15 @@ public class Tntcorelib implements ModInitializer {
                 @Override public boolean isRunning() { return false; }
                 @Override public void styleBossBar(Consumer<BossBar> consumer) {}
                 @Override public void setOnFinishAction(Runnable onFinish) {}
+                @Override public void show(ServerPlayerEntity player) {}
+                @Override public void hide(ServerPlayerEntity player) {}
+                @Override public void showToAll() {}
+                @Override public void hideFromAll() {}
+
+                @Override
+                public boolean isVisibleTo(ServerPlayerEntity player) {
+                    return false;
+                }
             };
         }
         return timerApiInstance;

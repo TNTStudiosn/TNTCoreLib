@@ -8,6 +8,7 @@ import net.minecraft.server.MinecraftServer;
  * Mi manejador para el módulo del Temporizador.
  * Se encarga de inicializar el manager y registrar los comandos
  * en el momento adecuado del ciclo de vida del servidor.
+ * No necesita cambios, su lógica sigue siendo correcta.
  */
 public class TimerHandler {
 

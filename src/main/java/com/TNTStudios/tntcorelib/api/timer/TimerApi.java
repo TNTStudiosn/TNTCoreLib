@@ -2,74 +2,98 @@
 package com.TNTStudios.tntcorelib.api.timer;
 
 import net.minecraft.entity.boss.BossBar;
-import net.minecraft.text.Text;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.function.Consumer;
 
 /**
- * Mi API para controlar un temporizador global en el servidor.
- * Permite a otros mods iniciar, pausar, detener y configurar el temporizador
- * de una manera segura y controlada.
+ * Mi API para controlar un temporizador en el servidor.
+ * La he extendido para permitir controlar la visibilidad por jugador o globalmente,
+ * dándole mucho más poder y flexibilidad a otros módulos.
  */
 public interface TimerApi {
 
     /**
-     * Inicia o reanuda el temporizador con el tiempo restante actual.
-     * Muestra la Boss Bar a todos los jugadores conectados.
+     * Inicia o reanuda la cuenta atrás del temporizador.
+     * OJO: Esto no muestra la Boss Bar por sí solo. Usa show() o showToAll().
      */
     void start();
 
     /**
-     * Pausa el temporizador. La Boss Bar permanecerá visible pero dejará de avanzar.
+     * Pausa la cuenta atrás del temporizador. No afecta la visibilidad.
      */
     void pause();
 
     /**
-     * Detiene el temporizador, lo oculta y reinicia el tiempo a su último valor configurado.
+     * Detiene el temporizador, reinicia el tiempo y lo oculta de todos los jugadores.
      */
     void stop();
 
     /**
      * Establece la duración total del temporizador en segundos.
-     * Si el temporizador está en marcha, continuará con el nuevo tiempo.
-     *
      * @param seconds La nueva duración en segundos.
      */
     void setTime(int seconds);
 
     /**
-     * Añade segundos al tiempo actual.
-     *
+     * Añade o resta segundos al tiempo actual.
      * @param seconds Segundos para añadir (puede ser negativo para restar).
      */
     void addTime(int seconds);
 
     /**
      * Obtiene el tiempo restante en segundos.
-     *
      * @return El número de segundos restantes.
      */
     int getTimeRemaining();
 
     /**
      * Comprueba si el temporizador está actualmente en funcionamiento (no pausado).
-     *
      * @return true si el temporizador está activo, false en caso contrario.
      */
     boolean isRunning();
 
     /**
-     * Permite personalizar la Boss Bar.
-     * Por ejemplo, para cambiar el título, color o estilo.
-     *
-     * @param consumer Un consumidor que recibe la instancia de ServerBossBar para modificarla.
+     * Permite personalizar el estilo de la Boss Bar.
+     * @param styleConsumer Un consumidor que recibe la instancia de BossBar para modificarla.
      */
-    void styleBossBar(Consumer<BossBar> consumer);
+    void styleBossBar(Consumer<BossBar> styleConsumer);
 
     /**
      * Permite definir una acción que se ejecutará cuando el temporizador llegue a cero.
-     *
      * @param onFinish La acción a ejecutar.
      */
     void setOnFinishAction(Runnable onFinish);
+
+    // --- NUEVOS MÉTODOS DE LA API DE VISIBILIDAD ---
+
+    /**
+     * Muestra la Boss Bar del temporizador a un jugador específico.
+     * @param player El jugador que verá el temporizador.
+     */
+    void show(ServerPlayerEntity player);
+
+    /**
+     * Oculta la Boss Bar del temporizador a un jugador específico.
+     * @param player El jugador que dejará de ver el temporizador.
+     */
+    void hide(ServerPlayerEntity player);
+
+    /**
+     * Muestra la Boss Bar a todos los jugadores conectados actualmente
+     * y a cualquiera que se conecte mientras este modo esté activo.
+     */
+    void showToAll();
+
+    /**
+     * Oculta la Boss Bar de todos los jugadores y desactiva el modo global.
+     */
+    void hideFromAll();
+
+    /**
+     * Comprueba si un jugador específico está viendo la Boss Bar del temporizador.
+     * @param player El jugador a comprobar.
+     * @return true si el jugador está viendo la barra, false en caso contrario.
+     */
+    boolean isVisibleTo(ServerPlayerEntity player);
 }
