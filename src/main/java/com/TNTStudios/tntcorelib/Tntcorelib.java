@@ -22,12 +22,18 @@ public class Tntcorelib implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // ✅ CORREGIDO: Registro los comandos aquí, en el punto de entrada principal del mod.
+        // Esto asegura que se registren durante la fase correcta de inicialización de Fabric,
+        // antes de que el servidor empiece a cargar.
+        CustomModelsHandler.registerCommands();
+
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             // Inicializo mis managers cuando el servidor arranca.
             tablistApiInstance = new TablistManager(server);
 
-            // ✅ NUEVO: Inicializo el nuevo módulo y su API.
-            CustomModelsHandler.init(server);
+            // ✅ CORREGIDO: Ahora llamo al método específico para inicializar el manager,
+            // que necesita la instancia del servidor.
+            CustomModelsHandler.initializeManager(server);
             customModelsApiInstance = CustomModelsHandler.getManager();
         });
     }
@@ -54,10 +60,7 @@ public class Tntcorelib implements ModInitializer {
 
     /**
      * ✅ NUEVO: Mi punto de acceso a la API de Modelos Personalizados.
-     * Proporciono una implementación "dummy" para evitar NullPointerExceptions
-     * si se llama a la API antes de que el servidor esté listo.
-     *
-     * @return La instancia de la API de Modelos Personalizados.
+     * (...)
      */
     public static CustomModelsApi getCustomModelsApi() {
         if (customModelsApiInstance == null) {

@@ -13,14 +13,26 @@ public class CustomModelsHandler {
     private static CustomModelsManager customModelsManager;
     private static CustomModelsConfig config;
 
-    public static void init(MinecraftServer server) {
-        config = CustomModelsConfig.load();
-        customModelsManager = new CustomModelsManager(server, config);
-
-        // Actualizo el registro del comando. Ya no le paso la config porque la
-        // comprobación de permisos ahora es fija y no configurable.
+    /**
+     * ✅ CORREGIDO: Mi método para registrar los comandos.
+     * Lo llamo directamente desde la clase principal del mod en 'onInitialize'
+     * para asegurar que los comandos se registren en el momento correcto del ciclo de vida de Fabric.
+     */
+    public static void registerCommands() {
+        // Registro el evento que registrará mi comando cuando el servidor esté listo para ello.
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 CustomModelsCommand.register(dispatcher));
+    }
+
+    /**
+     * ✅ CORREGIDO: Renombro 'init' a 'initializeManager' para que quede más claro.
+     * Este método inicializa la lógica que SÍ depende de la instancia del servidor
+     * y por eso lo llamo dentro del evento 'ServerLifecycleEvents.SERVER_STARTING'.
+     * @param server La instancia del servidor de Minecraft.
+     */
+    public static void initializeManager(MinecraftServer server) {
+        config = CustomModelsConfig.load();
+        customModelsManager = new CustomModelsManager(server, config);
     }
 
     public static CustomModelsManager getManager() {
