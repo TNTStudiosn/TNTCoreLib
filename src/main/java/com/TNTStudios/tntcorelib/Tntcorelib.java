@@ -3,13 +3,16 @@ package com.TNTStudios.tntcorelib;
 
 import com.TNTStudios.tntcorelib.api.custommodels.CustomModelsApi;
 import com.TNTStudios.tntcorelib.api.tablist.TablistApi;
-import com.TNTStudios.tntcorelib.api.timer.TimerApi; // ✅ NUEVO: Importo mi nueva API.
+import com.TNTStudios.tntcorelib.api.timer.TimerApi;
 import com.TNTStudios.tntcorelib.api.voicechat.VoiceChatApi;
+import com.TNTStudios.tntcorelib.api.tntalert.TNTAlertApi;
+import com.TNTStudios.tntcorelib.api.tntalert.AlertType;
 import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
-import com.TNTStudios.tntcorelib.modulo.timer.TimerHandler; // ✅ NUEVO: Importo mi nuevo handler.
+import com.TNTStudios.tntcorelib.modulo.timer.TimerHandler;
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatAddon;
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatCommand;
+import com.TNTStudios.tntcorelib.modulo.tntalert.TNTAlertHandler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -29,35 +32,51 @@ public class Tntcorelib implements ModInitializer {
     private static TablistApi tablistApiInstance;
     private static CustomModelsApi customModelsApiInstance;
     private static VoiceChatApi voiceChatApiInstance;
-    private static TimerApi timerApiInstance; // ✅ NUEVO: Añado la instancia para mi API del timer.
+    private static TimerApi timerApiInstance;
+    private static TNTAlertApi tntAlertApiInstance;
 
-    // Creo la instancia del addon para cargarla después.
     private final VoiceChatAddon voiceChatAddon = new VoiceChatAddon();
 
     @Override
     public void onInitialize() {
-        // 1. Registro el comando aquí. Esto se ejecuta en el momento correcto.
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             new VoiceChatCommand().register(dispatcher);
         });
 
-        // 2. Intento cargar el addon de PlasmoVoice.
         if (isPlasmoVoiceLoaded()) {
             PlasmoVoiceServer.getAddonsLoader().load(this.voiceChatAddon);
         }
 
-        // El resto de inicializaciones siguen igual.
         CustomModelsHandler.registerCommands();
-        TimerHandler.registerCommands(); // ✅ NUEVO: Registro los comandos de mi nuevo módulo.
+        TimerHandler.registerCommands();
+        TNTAlertHandler.registerCommands();
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             tablistApiInstance = new TablistManager(server);
             CustomModelsHandler.initializeManager(server);
             customModelsApiInstance = CustomModelsHandler.getManager();
-            TimerHandler.initialize(server); // ✅ NUEVO: Inicializo mi módulo de timer.
-            timerApiInstance = TimerHandler.getManager(); // ✅ NUEVO: Asigno la implementación a mi API.
+            TimerHandler.initialize(server);
+            timerApiInstance = TimerHandler.getManager();
+            TNTAlertHandler.initializeManager(server);
+            tntAlertApiInstance = TNTAlertHandler.getManager();
         });
     }
+
+    // ✅ NUEVO: Getter para la API de alertas.
+    public static TNTAlertApi getTNTAlertApi() {
+        if (tntAlertApiInstance == null) {
+            return new TNTAlertApi() {
+                @Override
+                public void showAlert(Collection<ServerPlayerEntity> players, AlertType type, String title, String subtitle) {}
+
+                @Override
+                public void showToAll(AlertType type, String title, String subtitle) {}
+            };
+        }
+        return tntAlertApiInstance;
+    }
+
+    // --- El resto de la clase permanece igual ---
 
     public static TimerApi getTimerApi() {
         if (timerApiInstance == null) {
@@ -75,29 +94,19 @@ public class Tntcorelib implements ModInitializer {
                 @Override public void hide(ServerPlayerEntity player) {}
                 @Override public void showToAll() {}
                 @Override public void hideFromAll() {}
-
-                @Override
-                public boolean isVisibleTo(ServerPlayerEntity player) {
-                    return false;
-                }
+                @Override public boolean isVisibleTo(ServerPlayerEntity player) { return false; }
             };
         }
         return timerApiInstance;
     }
 
-
-    // Los getters de las APIs no cambian.
     public static TablistApi getTablistApi() {
         if (tablistApiInstance == null) {
             return new TablistApi() {
-                @Override
-                public void hidePlayer(ServerPlayerEntity playerToHide, ServerPlayerEntity observer) {}
-                @Override
-                public void showPlayer(ServerPlayerEntity playerToShow, ServerPlayerEntity observer) {}
-                @Override
-                public boolean isPlayerHidden(ServerPlayerEntity player, ServerPlayerEntity observer) { return false; }
-                @Override
-                public boolean isPlayerHidden(UUID playerUuid, UUID observerUuid) { return false; }
+                @Override public void hidePlayer(ServerPlayerEntity playerToHide, ServerPlayerEntity observer) {}
+                @Override public void showPlayer(ServerPlayerEntity playerToShow, ServerPlayerEntity observer) {}
+                @Override public boolean isPlayerHidden(ServerPlayerEntity player, ServerPlayerEntity observer) { return false; }
+                @Override public boolean isPlayerHidden(UUID playerUuid, UUID observerUuid) { return false; }
             };
         }
         return tablistApiInstance;
@@ -106,16 +115,11 @@ public class Tntcorelib implements ModInitializer {
     public static CustomModelsApi getCustomModelsApi() {
         if (customModelsApiInstance == null) {
             return new CustomModelsApi() {
-                @Override
-                public void setModel(ServerPlayerEntity player, String modelName) {}
-                @Override
-                public void setModel(Collection<ServerPlayerEntity> players, String modelName) {}
-                @Override
-                public void resetModel(ServerPlayerEntity player) {}
-                @Override
-                public void resetModel(Collection<ServerPlayerEntity> players) {}
-                @Override
-                public List<String> getAvailableModels() { return Collections.emptyList(); }
+                @Override public void setModel(ServerPlayerEntity player, String modelName) {}
+                @Override public void setModel(Collection<ServerPlayerEntity> players, String modelName) {}
+                @Override public void resetModel(ServerPlayerEntity player) {}
+                @Override public void resetModel(Collection<ServerPlayerEntity> players) {}
+                @Override public List<String> getAvailableModels() { return Collections.emptyList(); }
             };
         }
         return customModelsApiInstance;
@@ -139,33 +143,14 @@ public class Tntcorelib implements ModInitializer {
 
     public static VoiceChatApi getVoiceChatApi() {
         if (voiceChatApiInstance == null) {
-            // Ahora mi implementación "dummy" es más inteligente.
-            // Avisa al jugador si intenta usar la función sin tener PlasmoVoice.
             return new VoiceChatApi() {
                 private void sendDisabledMessage(ServerPlayerEntity player) {
                     player.sendMessage(Text.literal("§c[Error] El módulo de voz no está activo en el servidor."), false);
                 }
-
-                @Override
-                public void mutePlayer(ServerPlayerEntity player) {
-                    sendDisabledMessage(player);
-                }
-
-                @Override
-                public void unmutePlayer(ServerPlayerEntity player) {
-                    sendDisabledMessage(player);
-                }
-
-                @Override
-                public void muteAllPlayers() {
-                    // No hay un jugador específico a quién notificar, así que lo logueo en consola.
-                    System.out.println("[TNTCoreLib] Se intentó ejecutar 'muteAllPlayers' pero el módulo de voz está inactivo.");
-                }
-
-                @Override
-                public void unmuteAllPlayers() {
-                    System.out.println("[TNTCoreLib] Se intentó ejecutar 'unmuteAllPlayers' pero el módulo de voz está inactivo.");
-                }
+                @Override public void mutePlayer(ServerPlayerEntity player) { sendDisabledMessage(player); }
+                @Override public void unmutePlayer(ServerPlayerEntity player) { sendDisabledMessage(player); }
+                @Override public void muteAllPlayers() { System.out.println("[TNTCoreLib] Se intentó ejecutar 'muteAllPlayers' pero el módulo de voz está inactivo."); }
+                @Override public void unmuteAllPlayers() { System.out.println("[TNTCoreLib] Se intentó ejecutar 'unmuteAllPlayers' pero el módulo de voz está inactivo."); }
             };
         }
         return voiceChatApiInstance;

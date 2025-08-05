@@ -27,6 +27,7 @@ repositories {
     maven {
         url "https://cursemaven.com"
     }
+    maven { url = "https://maven.txni.dev/releases" }
 }
 
 dependencies {
@@ -46,6 +47,12 @@ dependencies {
 
     //chat de voz
     modImplementation "curse.maven:plasmo-voice-467028:6716384"
+
+    //tntalert
+    modImplementation("toni.immersivemessages:fabric-1.20.1:1.0.18") {
+        transitive = false
+    }
+    modImplementation "curse.maven:txnilib-1104882:6533721"
 }
 
 processResources {
