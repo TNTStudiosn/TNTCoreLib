@@ -3,14 +3,17 @@ package com.TNTStudios.tntcorelib;
 
 import com.TNTStudios.tntcorelib.api.custommodels.CustomModelsApi;
 import com.TNTStudios.tntcorelib.api.tablist.TablistApi;
+import com.TNTStudios.tntcorelib.api.timer.TimerApi; // ✅ NUEVO: Importo mi nueva API.
 import com.TNTStudios.tntcorelib.api.voicechat.VoiceChatApi;
 import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
+import com.TNTStudios.tntcorelib.modulo.timer.TimerHandler; // ✅ NUEVO: Importo mi nuevo handler.
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatAddon;
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatCommand;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.entity.boss.BossBar;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import su.plo.voice.api.server.PlasmoVoiceServer;
@@ -19,12 +22,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class Tntcorelib implements ModInitializer {
 
     private static TablistApi tablistApiInstance;
     private static CustomModelsApi customModelsApiInstance;
     private static VoiceChatApi voiceChatApiInstance;
+    private static TimerApi timerApiInstance; // ✅ NUEVO: Añado la instancia para mi API del timer.
 
     // Creo la instancia del addon para cargarla después.
     private final VoiceChatAddon voiceChatAddon = new VoiceChatAddon();
@@ -43,12 +48,34 @@ public class Tntcorelib implements ModInitializer {
 
         // El resto de inicializaciones siguen igual.
         CustomModelsHandler.registerCommands();
+        TimerHandler.registerCommands(); // ✅ NUEVO: Registro los comandos de mi nuevo módulo.
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             tablistApiInstance = new TablistManager(server);
             CustomModelsHandler.initializeManager(server);
             customModelsApiInstance = CustomModelsHandler.getManager();
+            TimerHandler.initialize(server); // ✅ NUEVO: Inicializo mi módulo de timer.
+            timerApiInstance = TimerHandler.getManager(); // ✅ NUEVO: Asigno la implementación a mi API.
         });
+    }
+
+    // ✅ NUEVO: Getter para mi TimerApi, con una implementación "dummy" por si falla la carga.
+    public static TimerApi getTimerApi() {
+        if (timerApiInstance == null) {
+            // Devuelvo una implementación que no hace nada para evitar NullPointerExceptions.
+            return new TimerApi() {
+                @Override public void start() {}
+                @Override public void pause() {}
+                @Override public void stop() {}
+                @Override public void setTime(int seconds) {}
+                @Override public void addTime(int seconds) {}
+                @Override public int getTimeRemaining() { return 0; }
+                @Override public boolean isRunning() { return false; }
+                @Override public void styleBossBar(Consumer<BossBar> consumer) {}
+                @Override public void setOnFinishAction(Runnable onFinish) {}
+            };
+        }
+        return timerApiInstance;
     }
 
 
