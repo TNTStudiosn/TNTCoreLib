@@ -64,7 +64,6 @@ public class TNTAlertManager implements TNTAlertApi {
     private ImmersiveMessage createNotificationMessage(String title, String subtitle) {
         return ImmersiveMessage.builder(5f, title)
                 .anchor(TextAnchor.TOP_CENTER)
-                .y(15f)
                 .wrap(320)
                 .background()
                 .borderTopColor(0xFFA0A0A0)
@@ -143,7 +142,6 @@ public class TNTAlertManager implements TNTAlertApi {
     private ImmersiveMessage createTipMessage(String title, String subtitle) {
         return ImmersiveMessage.builder(5.5f, title)
                 .anchor(TextAnchor.TOP_CENTER)
-                .x(-20f)
                 .wrap(240)
                 .background()
                 .borderTopColor(0xFF55CDEF)
@@ -159,7 +157,6 @@ public class TNTAlertManager implements TNTAlertApi {
                 .italic()
                 .subtext(0.2f, subtitle, sub -> sub
                         .anchor(TextAnchor.TOP_CENTER)
-                        .x(-20f)
                         .wrap(240)
                         .fadeIn(0.5f)
                         .fadeOut(0.5f)
