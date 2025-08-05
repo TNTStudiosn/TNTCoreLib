@@ -44,8 +44,8 @@ dependencies {
     //CustomPlayerModels - usado por el modulo playermodel
     modImplementation "curse.maven:custom-player-models-fabric-440597:6843773"
 
-    //luckyperms usado para permisos
-    compileOnly 'net.luckperms:api:5.4'
+    //chat de voz
+    modImplementation "curse.maven:plasmo-voice-467028:6716384"
 }
 
 processResources {
