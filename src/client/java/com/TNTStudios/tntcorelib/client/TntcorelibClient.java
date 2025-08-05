@@ -3,6 +3,7 @@ package com.TNTStudios.tntcorelib.client;
 
 import com.TNTStudios.tntcorelib.client.modulo.antitrampas.AntiTrampasHandler;
 import com.TNTStudios.tntcorelib.client.modulo.custommenu.CustomMenuHandler;
+import com.TNTStudios.tntcorelib.client.modulo.custommodels.CustomModelsClientHandler;
 import com.TNTStudios.tntcorelib.client.modulo.debug.DebugHudHandler;
 import com.TNTStudios.tntcorelib.client.modulo.discord.DiscordPresenceHandler;
 import com.TNTStudios.tntcorelib.client.modulo.tablist.CustomPlayerListHud;
@@ -37,5 +38,8 @@ public class TntcorelibClient implements ClientModInitializer {
 
         // 🛡️ Iniciar módulo Anti-Trampas
         AntiTrampasHandler.init();
+
+        // ✅ Iniciar el receptor de paquetes para los modelos personalizados.
+        CustomModelsClientHandler.registerReceivers();
     }
 }

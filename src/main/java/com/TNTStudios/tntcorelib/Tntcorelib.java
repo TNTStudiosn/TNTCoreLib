@@ -1,36 +1,43 @@
+// Ubicación: src/main/java/com/TNTStudios/tntcorelib/Tntcorelib.java
 package com.TNTStudios.tntcorelib;
 
+import com.TNTStudios.tntcorelib.api.custommodels.CustomModelsApi;
 import com.TNTStudios.tntcorelib.api.tablist.TablistApi;
+import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class Tntcorelib implements ModInitializer {
 
     private static TablistApi tablistApiInstance;
+    // ✅ NUEVO: Añado la instancia para la API de modelos personalizados.
+    private static CustomModelsApi customModelsApiInstance;
 
     @Override
     public void onInitialize() {
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            // Inicializo mis managers cuando el servidor arranca.
             tablistApiInstance = new TablistManager(server);
+
+            // ✅ NUEVO: Inicializo el nuevo módulo y su API.
+            CustomModelsHandler.init(server);
+            customModelsApiInstance = CustomModelsHandler.getManager();
         });
     }
 
     /**
      * Mi punto de acceso público y estático a la API del Tablist.
-     * Cualquier mod puede llamar a Tntcorelib.getTablistApi() para obtener la instancia.
-     * Si la API no está lista (servidor no iniciado), devuelvo una implementación vacía
-     * para evitar NullPointerExceptions y garantizar la estabilidad.
-     *
-     * @return La instancia de la API del Tablist.
+     * (...)
      */
     public static TablistApi getTablistApi() {
         if (tablistApiInstance == null) {
-            // Este es mi "fallback" seguro. Si alguien llama a la API antes de tiempo,
-            // no hará nada y no romperá el juego.
             return new TablistApi() {
                 @Override
                 public void hidePlayer(ServerPlayerEntity playerToHide, ServerPlayerEntity observer) {}
@@ -43,5 +50,30 @@ public class Tntcorelib implements ModInitializer {
             };
         }
         return tablistApiInstance;
+    }
+
+    /**
+     * ✅ NUEVO: Mi punto de acceso a la API de Modelos Personalizados.
+     * Proporciono una implementación "dummy" para evitar NullPointerExceptions
+     * si se llama a la API antes de que el servidor esté listo.
+     *
+     * @return La instancia de la API de Modelos Personalizados.
+     */
+    public static CustomModelsApi getCustomModelsApi() {
+        if (customModelsApiInstance == null) {
+            return new CustomModelsApi() {
+                @Override
+                public void setModel(ServerPlayerEntity player, String modelName) {}
+                @Override
+                public void setModel(Collection<ServerPlayerEntity> players, String modelName) {}
+                @Override
+                public void resetModel(ServerPlayerEntity player) {}
+                @Override
+                public void resetModel(Collection<ServerPlayerEntity> players) {}
+                @Override
+                public List<String> getAvailableModels() { return Collections.emptyList(); }
+            };
+        }
+        return customModelsApiInstance;
     }
 }
