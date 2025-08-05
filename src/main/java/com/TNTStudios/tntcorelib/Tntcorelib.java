@@ -7,7 +7,6 @@ import com.TNTStudios.tntcorelib.api.voicechat.VoiceChatApi;
 import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatAddon;
-// Ya no necesito importar la clase del comando aquí.
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatCommand;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -25,7 +24,6 @@ public class Tntcorelib implements ModInitializer {
 
     private static TablistApi tablistApiInstance;
     private static CustomModelsApi customModelsApiInstance;
-    // La instancia de la API ahora es privada, la gestiono desde aquí.
     private static VoiceChatApi voiceChatApiInstance;
 
     // Creo la instancia del addon para cargarla después.
