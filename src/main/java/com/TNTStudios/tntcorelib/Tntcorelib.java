@@ -6,12 +6,15 @@ import com.TNTStudios.tntcorelib.api.tablist.TablistApi;
 import com.TNTStudios.tntcorelib.api.voicechat.VoiceChatApi;
 import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
-// ✅ NUEVO: Importo mi clase de comando y el callback de Fabric.
+import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatAddon;
+// Ya no necesito importar la clase del comando aquí.
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatCommand;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import su.plo.voice.api.server.PlasmoVoiceServer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,41 +25,38 @@ public class Tntcorelib implements ModInitializer {
 
     private static TablistApi tablistApiInstance;
     private static CustomModelsApi customModelsApiInstance;
+    // La instancia de la API ahora es privada, la gestiono desde aquí.
     private static VoiceChatApi voiceChatApiInstance;
+
+    // Creo la instancia del addon para cargarla después.
+    private final VoiceChatAddon voiceChatAddon = new VoiceChatAddon();
 
     @Override
     public void onInitialize() {
-        // La inicialización del manager de voz la sigue gestionando el addon.
+        // 1. Registro el comando aquí. Esto se ejecuta en el momento correcto.
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            new VoiceChatCommand().register(dispatcher);
+        });
+
+        // 2. Intento cargar el addon de PlasmoVoice.
+        if (isPlasmoVoiceLoaded()) {
+            PlasmoVoiceServer.getAddonsLoader().load(this.voiceChatAddon);
+        }
+
+        // El resto de inicializaciones siguen igual.
         CustomModelsHandler.registerCommands();
 
-        // ✅ NUEVO: Registro el comando de voice chat aquí para asegurar que se haga
-        // en el momento correcto del ciclo de vida de Fabric.
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                VoiceChatCommand.register(dispatcher)
-        );
-
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            // Inicializo mis managers cuando el servidor arranca.
             tablistApiInstance = new TablistManager(server);
-
             CustomModelsHandler.initializeManager(server);
             customModelsApiInstance = CustomModelsHandler.getManager();
         });
     }
 
-    // Un setter para que mi addon pueda establecer la instancia de la API.
-    public static void setVoiceChatApi(VoiceChatApi api) {
-        if (voiceChatApiInstance == null) {
-            voiceChatApiInstance = api;
-        }
-    }
 
-    /**
-     * Mi punto de acceso público y estático a la API del Tablist.
-     */
+    // Los getters de las APIs no cambian.
     public static TablistApi getTablistApi() {
         if (tablistApiInstance == null) {
-            // Devuelvo una implementación 'dummy' para evitar NullPointerExceptions si se llama antes de tiempo.
             return new TablistApi() {
                 @Override
                 public void hidePlayer(ServerPlayerEntity playerToHide, ServerPlayerEntity observer) {}
@@ -71,9 +71,6 @@ public class Tntcorelib implements ModInitializer {
         return tablistApiInstance;
     }
 
-    /**
-     * Mi punto de acceso a la API de Modelos Personalizados.
-     */
     public static CustomModelsApi getCustomModelsApi() {
         if (customModelsApiInstance == null) {
             return new CustomModelsApi() {
@@ -92,21 +89,51 @@ public class Tntcorelib implements ModInitializer {
         return customModelsApiInstance;
     }
 
-    /**
-     * Mi punto de acceso a la API de Chat de Voz.
-     */
+    private boolean isPlasmoVoiceLoaded() {
+        try {
+            Class.forName("su.plo.voice.api.server.PlasmoVoiceServer");
+            return true;
+        } catch (ClassNotFoundException e) {
+            System.out.println("[TNTCoreLib] PlasmoVoice no encontrado. El módulo de chat de voz será desactivado.");
+            return false;
+        }
+    }
+
+    public static void setVoiceChatApi(VoiceChatApi api) {
+        if (voiceChatApiInstance == null) {
+            voiceChatApiInstance = api;
+        }
+    }
+
     public static VoiceChatApi getVoiceChatApi() {
         if (voiceChatApiInstance == null) {
-            // Implementación 'dummy' para seguridad.
+            // Ahora mi implementación "dummy" es más inteligente.
+            // Avisa al jugador si intenta usar la función sin tener PlasmoVoice.
             return new VoiceChatApi() {
+                private void sendDisabledMessage(ServerPlayerEntity player) {
+                    player.sendMessage(Text.literal("§c[Error] El módulo de voz no está activo en el servidor."), false);
+                }
+
                 @Override
-                public void mutePlayer(ServerPlayerEntity player) {}
+                public void mutePlayer(ServerPlayerEntity player) {
+                    sendDisabledMessage(player);
+                }
+
                 @Override
-                public void unmutePlayer(ServerPlayerEntity player) {}
+                public void unmutePlayer(ServerPlayerEntity player) {
+                    sendDisabledMessage(player);
+                }
+
                 @Override
-                public void muteAllPlayers() {}
+                public void muteAllPlayers() {
+                    // No hay un jugador específico a quién notificar, así que lo logueo en consola.
+                    System.out.println("[TNTCoreLib] Se intentó ejecutar 'muteAllPlayers' pero el módulo de voz está inactivo.");
+                }
+
                 @Override
-                public void unmuteAllPlayers() {}
+                public void unmuteAllPlayers() {
+                    System.out.println("[TNTCoreLib] Se intentó ejecutar 'unmuteAllPlayers' pero el módulo de voz está inactivo.");
+                }
             };
         }
         return voiceChatApiInstance;
