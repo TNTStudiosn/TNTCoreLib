@@ -22,9 +22,7 @@ public class Tntcorelib implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        // ✅ CORREGIDO: Registro los comandos aquí, en el punto de entrada principal del mod.
-        // Esto asegura que se registren durante la fase correcta de inicialización de Fabric,
-        // antes de que el servidor empiece a cargar.
+
         CustomModelsHandler.registerCommands();
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
@@ -40,7 +38,7 @@ public class Tntcorelib implements ModInitializer {
 
     /**
      * Mi punto de acceso público y estático a la API del Tablist.
-     * (...)
+     *
      */
     public static TablistApi getTablistApi() {
         if (tablistApiInstance == null) {
@@ -60,7 +58,7 @@ public class Tntcorelib implements ModInitializer {
 
     /**
      * ✅ NUEVO: Mi punto de acceso a la API de Modelos Personalizados.
-     * (...)
+     *
      */
     public static CustomModelsApi getCustomModelsApi() {
         if (customModelsApiInstance == null) {
