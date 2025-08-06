@@ -2,17 +2,20 @@
 package com.TNTStudios.tntcorelib;
 
 import com.TNTStudios.tntcorelib.api.custommodels.CustomModelsApi;
+import com.TNTStudios.tntcorelib.api.playerstats.PlayerStatsApi;
 import com.TNTStudios.tntcorelib.api.tablist.TablistApi;
 import com.TNTStudios.tntcorelib.api.timer.TimerApi;
 import com.TNTStudios.tntcorelib.api.voicechat.VoiceChatApi;
 import com.TNTStudios.tntcorelib.api.tntalert.TNTAlertApi;
 import com.TNTStudios.tntcorelib.api.tntalert.AlertType;
 import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
+import com.TNTStudios.tntcorelib.modulo.playerstats.PlayerStatsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
 import com.TNTStudios.tntcorelib.modulo.timer.TimerHandler;
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatAddon;
 import com.TNTStudios.tntcorelib.modulo.voicechat.VoiceChatCommand;
 import com.TNTStudios.tntcorelib.modulo.tntalert.TNTAlertHandler;
+import com.TNTStudios.tntcorelib.network.ModPackets;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -29,16 +32,21 @@ import java.util.function.Consumer;
 
 public class Tntcorelib implements ModInitializer {
 
+    public static final String MOD_ID = "tntcorelib";
+    public static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(MOD_ID);
     private static TablistApi tablistApiInstance;
     private static CustomModelsApi customModelsApiInstance;
     private static VoiceChatApi voiceChatApiInstance;
     private static TimerApi timerApiInstance;
     private static TNTAlertApi tntAlertApiInstance;
+    private static PlayerStatsApi playerStatsApiInstance; // Ya tenías la variable, perfecto.
 
     private final VoiceChatAddon voiceChatAddon = new VoiceChatAddon();
 
     @Override
     public void onInitialize() {
+        ModPackets.register();
+
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             new VoiceChatCommand().register(dispatcher);
         });
@@ -50,6 +58,7 @@ public class Tntcorelib implements ModInitializer {
         CustomModelsHandler.registerCommands();
         TimerHandler.registerCommands();
         TNTAlertHandler.registerCommands();
+        PlayerStatsHandler.registerCommands(); // Esto está bien, registra el comando.
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             tablistApiInstance = new TablistManager(server);
@@ -59,10 +68,33 @@ public class Tntcorelib implements ModInitializer {
             timerApiInstance = TimerHandler.getManager();
             TNTAlertHandler.initializeManager(server);
             tntAlertApiInstance = TNTAlertHandler.getManager();
+            PlayerStatsHandler.initializeManager(server);
+            playerStatsApiInstance = PlayerStatsHandler.getManager(); // Aquí se inicializa la instancia real.
         });
     }
 
-    // ✅ NUEVO: Getter para la API de alertas.
+    public static PlayerStatsApi getPlayerStatsApi() {
+        if (playerStatsApiInstance == null) {
+            return new PlayerStatsApi() {
+                @Override public void pauseHealth(ServerPlayerEntity player) {}
+                @Override public void resumeHealth(ServerPlayerEntity player) {}
+                @Override public void setHealth(ServerPlayerEntity player, float health) {}
+                @Override public void pauseFood(ServerPlayerEntity player) {}
+                @Override public void resumeFood(ServerPlayerEntity player) {}
+                @Override public void setFoodLevel(ServerPlayerEntity player, int foodLevel) {}
+                @Override public void pauseHealth(Collection<ServerPlayerEntity> players) {}
+                @Override public void resumeHealth(Collection<ServerPlayerEntity> players) {}
+                @Override public void setHealth(Collection<ServerPlayerEntity> players, float health) {}
+                @Override public void pauseFood(Collection<ServerPlayerEntity> players) {}
+                @Override public void resumeFood(Collection<ServerPlayerEntity> players) {}
+                @Override public void setFoodLevel(Collection<ServerPlayerEntity> players, int foodLevel) {}
+                @Override public boolean isHealthPaused(ServerPlayerEntity player) { return false; }
+                @Override public boolean isFoodPaused(ServerPlayerEntity player) { return false; }
+            };
+        }
+        return playerStatsApiInstance;
+    }
+
     public static TNTAlertApi getTNTAlertApi() {
         if (tntAlertApiInstance == null) {
             return new TNTAlertApi() {
@@ -75,8 +107,6 @@ public class Tntcorelib implements ModInitializer {
         }
         return tntAlertApiInstance;
     }
-
-    // --- El resto de la clase permanece igual ---
 
     public static TimerApi getTimerApi() {
         if (timerApiInstance == null) {

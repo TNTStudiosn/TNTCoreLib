@@ -9,6 +9,7 @@ import com.TNTStudios.tntcorelib.client.modulo.discord.DiscordPresenceHandler;
 import com.TNTStudios.tntcorelib.client.modulo.tablist.CustomPlayerListHud;
 import com.TNTStudios.tntcorelib.client.modulo.tablist.TablistHandler;
 import com.TNTStudios.tntcorelib.client.modulo.window.WindowHandler;
+import com.TNTStudios.tntcorelib.client.network.PlayerStatsPacketHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
@@ -16,6 +17,11 @@ public class TntcorelibClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        PlayerStatsPacketHandler.register();
+
+        // ✅ Iniciar el receptor de paquetes para los modelos personalizados.
+        CustomModelsClientHandler.registerReceivers();
+
         // ✨ Iniciar módulo de Ventana Personalizada
         WindowHandler.init();
 
