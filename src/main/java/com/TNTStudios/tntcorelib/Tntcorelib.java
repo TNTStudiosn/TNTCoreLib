@@ -2,6 +2,7 @@
 package com.TNTStudios.tntcorelib;
 
 import com.TNTStudios.tntcorelib.api.custommodels.CustomModelsApi;
+import com.TNTStudios.tntcorelib.api.freeze.FreezeApi;
 import com.TNTStudios.tntcorelib.api.playerstats.PlayerStatsApi;
 import com.TNTStudios.tntcorelib.api.tablist.TablistApi;
 import com.TNTStudios.tntcorelib.api.timer.TimerApi;
@@ -10,6 +11,7 @@ import com.TNTStudios.tntcorelib.api.tntalert.TNTAlertApi;
 import com.TNTStudios.tntcorelib.api.tntalert.AlertType;
 import com.TNTStudios.tntcorelib.modulo.connectionmessages.ConnectionMessagesHandler;
 import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
+import com.TNTStudios.tntcorelib.modulo.freeze.FreezeHandler;
 import com.TNTStudios.tntcorelib.modulo.playerstats.PlayerStatsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
 import com.TNTStudios.tntcorelib.modulo.timer.TimerHandler;
@@ -41,7 +43,8 @@ public class Tntcorelib implements ModInitializer {
     private static VoiceChatApi voiceChatApiInstance;
     private static TimerApi timerApiInstance;
     private static TNTAlertApi tntAlertApiInstance;
-    private static PlayerStatsApi playerStatsApiInstance; // Ya tenías la variable, perfecto.
+    private static PlayerStatsApi playerStatsApiInstance;
+    private static FreezeApi freezeApiInstance;
 
     private final VoiceChatAddon voiceChatAddon = new VoiceChatAddon();
 
@@ -54,6 +57,8 @@ public class Tntcorelib implements ModInitializer {
 
         // ✅ Inicializo mi nuevo módulo para el comando /me.
         MeCommandHandler.init();
+
+        FreezeHandler.registerCommands();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             new VoiceChatCommand().register(dispatcher);
@@ -77,9 +82,15 @@ public class Tntcorelib implements ModInitializer {
             TNTAlertHandler.initializeManager(server);
             tntAlertApiInstance = TNTAlertHandler.getManager();
             PlayerStatsHandler.initializeManager(server);
-            playerStatsApiInstance = PlayerStatsHandler.getManager(); // Aquí se inicializa la instancia real.
+            playerStatsApiInstance = PlayerStatsHandler.getManager();
+
+            // ✅ CORRECCIÓN: Uso los nombres de método correctos: initialize y getApi.
+            FreezeHandler.initialize(server);
+            freezeApiInstance = FreezeHandler.getApi();
         });
     }
+
+    // ... El resto de la clase Tntcorelib no necesita cambios ...
 
     public static PlayerStatsApi getPlayerStatsApi() {
         if (playerStatsApiInstance == null) {
@@ -192,5 +203,19 @@ public class Tntcorelib implements ModInitializer {
             };
         }
         return voiceChatApiInstance;
+    }
+
+    public static FreezeApi getFreezeApi() {
+        if (freezeApiInstance == null) {
+            return new FreezeApi() {
+                @Override public void freezePlayer(ServerPlayerEntity player) {}
+                @Override public void freezePlayer(Collection<ServerPlayerEntity> players) {}
+                @Override public void unfreezePlayer(ServerPlayerEntity player) {}
+                @Override public void unfreezePlayer(Collection<ServerPlayerEntity> players) {}
+                @Override public boolean isPlayerFrozen(ServerPlayerEntity player) { return false; }
+                @Override public boolean isPlayerFrozen(UUID playerUuid) { return false; }
+            };
+        }
+        return freezeApiInstance;
     }
 }
