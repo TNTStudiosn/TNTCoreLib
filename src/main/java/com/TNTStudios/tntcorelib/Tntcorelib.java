@@ -8,6 +8,7 @@ import com.TNTStudios.tntcorelib.api.timer.TimerApi;
 import com.TNTStudios.tntcorelib.api.voicechat.VoiceChatApi;
 import com.TNTStudios.tntcorelib.api.tntalert.TNTAlertApi;
 import com.TNTStudios.tntcorelib.api.tntalert.AlertType;
+import com.TNTStudios.tntcorelib.modulo.connectionmessages.ConnectionMessagesHandler;
 import com.TNTStudios.tntcorelib.modulo.custommodels.CustomModelsHandler;
 import com.TNTStudios.tntcorelib.modulo.playerstats.PlayerStatsHandler;
 import com.TNTStudios.tntcorelib.modulo.tablist.TablistManager;
@@ -46,6 +47,9 @@ public class Tntcorelib implements ModInitializer {
     @Override
     public void onInitialize() {
         ModPackets.register();
+
+        // ✅ Inicializo mi nuevo módulo para los mensajes de conexión.
+        ConnectionMessagesHandler.init();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             new VoiceChatCommand().register(dispatcher);
