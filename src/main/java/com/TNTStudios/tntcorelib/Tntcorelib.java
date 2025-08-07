@@ -24,6 +24,7 @@ import net.minecraft.entity.boss.BossBar;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import su.plo.voice.api.server.PlasmoVoiceServer;
+import com.TNTStudios.tntcorelib.modulo.mecommand.MeCommandHandler;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -50,6 +51,9 @@ public class Tntcorelib implements ModInitializer {
 
         // ✅ Inicializo mi nuevo módulo para los mensajes de conexión.
         ConnectionMessagesHandler.init();
+
+        // ✅ Inicializo mi nuevo módulo para el comando /me.
+        MeCommandHandler.init();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             new VoiceChatCommand().register(dispatcher);

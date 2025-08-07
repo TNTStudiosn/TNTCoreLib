@@ -4,7 +4,8 @@
   "package": "com.TNTStudios.tntcorelib.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "PlayerManagerMixin"
+    "PlayerManagerMixin",
+    "MeCommandMixin"
   ],
   "injectors": {
     "defaultRequire": 1
