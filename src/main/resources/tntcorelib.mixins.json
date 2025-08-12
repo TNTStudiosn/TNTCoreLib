@@ -7,7 +7,8 @@
     "PlayerManagerMixin",
     "MeCommandMixin",
     "PlayerUpdateMixin",
-    "ServerPlayNetworkHandlerMixin"
+    "ServerPlayNetworkHandlerMixin",
+    "ChatControlMixin"
   ],
   "injectors": {
     "defaultRequire": 1

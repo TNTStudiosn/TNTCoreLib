@@ -27,6 +27,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import su.plo.voice.api.server.PlasmoVoiceServer;
 import com.TNTStudios.tntcorelib.modulo.mecommand.MeCommandHandler;
+import com.TNTStudios.tntcorelib.api.chat.ChatControlApi;
+import com.TNTStudios.tntcorelib.modulo.chatcontrol.ChatControlHandler;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,6 +47,7 @@ public class Tntcorelib implements ModInitializer {
     private static TNTAlertApi tntAlertApiInstance;
     private static PlayerStatsApi playerStatsApiInstance;
     private static FreezeApi freezeApiInstance;
+    private static ChatControlApi chatControlApiInstance;
 
     private final VoiceChatAddon voiceChatAddon = new VoiceChatAddon();
 
@@ -57,6 +60,9 @@ public class Tntcorelib implements ModInitializer {
 
         // ✅ Inicializo mi nuevo módulo para el comando /me.
         MeCommandHandler.init();
+
+        // ✅ Inicializo mi módulo para controlar el chat.
+        ChatControlHandler.init();
 
         FreezeHandler.registerCommands();
 
@@ -83,8 +89,8 @@ public class Tntcorelib implements ModInitializer {
             tntAlertApiInstance = TNTAlertHandler.getManager();
             PlayerStatsHandler.initializeManager(server);
             playerStatsApiInstance = PlayerStatsHandler.getManager();
+            chatControlApiInstance = ChatControlHandler.getApi();
 
-            // ✅ CORRECCIÓN: Uso los nombres de método correctos: initialize y getApi.
             FreezeHandler.initialize(server);
             freezeApiInstance = FreezeHandler.getApi();
         });
@@ -203,6 +209,21 @@ public class Tntcorelib implements ModInitializer {
             };
         }
         return voiceChatApiInstance;
+    }
+
+    /**
+     * Mi getter para la API de control de chat.
+     * Si el módulo no se ha cargado, devuelvo una implementación vacía para evitar errores.
+     * @return La instancia de la API de control de chat.
+     */
+    public static ChatControlApi getChatControlApi() {
+        if (chatControlApiInstance == null) {
+            return new ChatControlApi() {
+                @Override public void setChatMuted(boolean muted) {}
+                @Override public boolean isChatMuted() { return false; } // Por defecto, el chat funciona.
+            };
+        }
+        return chatControlApiInstance;
     }
 
     public static FreezeApi getFreezeApi() {
